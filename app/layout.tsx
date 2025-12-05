@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
+import { AuthGuard } from "@/components/auth-guard"
 import "./globals.css"
 
 const geist = Geist({ 
@@ -44,7 +45,9 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}>
-        {children}
+        <AuthGuard>
+          {children}
+        </AuthGuard>
         <Analytics />
       </body>
     </html>

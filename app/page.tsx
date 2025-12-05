@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/client"
 import { formatDate } from "@/lib/utils"
+import { logout } from "@/lib/auth"
 
 interface DailyRecord {
   id: string
@@ -14,9 +16,16 @@ interface DailyRecord {
 }
 
 export default function HomePage() {
+  const router = useRouter()
   const [records, setRecords] = useState<DailyRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [todayRecord, setTodayRecord] = useState<DailyRecord | null>(null)
+
+  const handleLogout = () => {
+    logout()
+    router.push("/login")
+    router.refresh()
+  }
 
   useEffect(() => {
     loadRecords()
@@ -52,7 +61,17 @@ export default function HomePage() {
     <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-8 text-center">
+        <div className="mb-8 text-center relative">
+          <div className="absolute top-0 right-0">
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              size="sm"
+              className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+            >
+              Cerrar Sesión
+            </Button>
+          </div>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">La tiendita Barrazas</h1>
           <p className="text-lg text-gray-600">Control de ventas diarias</p>
         </div>
