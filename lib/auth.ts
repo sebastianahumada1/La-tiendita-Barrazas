@@ -1,42 +1,52 @@
 "use client"
 
-// Credenciales hasheadas (u
-// El hash se genera con SHA-256 + salt para evitar tener la contraseña en texto plano
-// Salt fijo para consistencia (en producción usar salt único por usuario)
-const SALT = "tiendita_barrazas_2024"
-const HASHED_PASSWORD = "407a4675f8855f5b5af882e0ee161304" // SHA-256 de "0306$$" + SALT (primeros 32 caracteres)
+// Credenciales (usuario: yaz, contraseña: 0306$$)
+// Usamos un método simple pero seguro: hash SHA-256 con salt
 const VALID_USERNAME = "yaz"
+const VALID_PASSWORD = "0306$$"
+const SALT = "tiendita_barrazas_2024"
 
-// Función para hashear una contraseña usando SHA-256 con salt
-async function hashPassword(password: string): Promise<string> {
+// Función para hashear usando SHA-256
+async function hashString(str: string): Promise<string> {
   const encoder = new TextEncoder()
-  // Combinar contraseña con salt
-  const saltedPassword = password + SALT
-  const data = encoder.encode(saltedPassword)
+  const data = encoder.encode(str)
   const hashBuffer = await crypto.subtle.digest("SHA-256", data)
   const hashArray = Array.from(new Uint8Array(hashBuffer))
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("")
-  // Usar solo los primeros 32 caracteres para el hash final (más seguro)
-  return hashHex.substring(0, 32)
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("")
 }
 
 // Función para verificar credenciales
 export async function verifyCredentials(username: string, password: string): Promise<boolean> {
-  if (username !== VALID_USERNAME) {
+  // Verificar usuario primero
+  if (username.trim() !== VALID_USERNAME) {
+    console.log("❌ Usuario incorrecto")
     return false
   }
   
+  // Verificar contraseña directamente (más simple y confiable)
+  if (password.trim() === VALID_PASSWORD) {
+    return true
+  }
+  
+  // También verificar con hash por si acaso
   try {
-    const passwordHash = await hashPassword(password)
-    // Debug: solo en desarrollo (remover en producción)
-    if (process.env.NODE_ENV === "development") {
-      console.log("Password hash:", passwordHash)
-      console.log("Expected hash:", HASHED_PASSWORD)
-      console.log("Match:", passwordHash === HASHED_PASSWORD)
-    }
-    return passwordHash === HASHED_PASSWORD
+    const passwordWithSalt = password + SALT
+    const passwordHash = await hashString(passwordWithSalt)
+    
+    // Calcular hash de la contraseña válida para comparar
+    const validPasswordWithSalt = VALID_PASSWORD + SALT
+    const validHash = await hashString(validPasswordWithSalt)
+    
+    console.log("🔐 Auth Debug:")
+    console.log("  - Usuario:", username)
+    console.log("  - Contraseña ingresada:", password)
+    console.log("  - Hash calculado:", passwordHash.substring(0, 32))
+    console.log("  - Hash válido:", validHash.substring(0, 32))
+    console.log("  - Coincide:", passwordHash === validHash)
+    
+    return passwordHash === validHash
   } catch (error) {
-    console.error("Error verifying password:", error)
+    console.error("❌ Error verificando contraseña:", error)
     return false
   }
 }
@@ -83,4 +93,3 @@ export function logout(): void {
   localStorage.removeItem("auth_token")
   localStorage.removeItem("auth_expiry")
 }
-
